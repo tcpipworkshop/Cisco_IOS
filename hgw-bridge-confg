@@ -1,0 +1,246 @@
+hostname HGW-BRIDGE
+!
+clock timezone JST 9 0
+!
+ipv6 unicast-routing
+ipv6 cef
+ipv6 dhcp pool STATEFUL_BVI1
+ prefix-delegation pool HGW_PD lifetime 14400 12600
+ dns-server 2404:1A8:7F01:A::3
+ dns-server 2404:1A8:7F01:B::3
+ domain-name flets-east.jp
+ domain-name iptvf.jp
+ sip address 2404:1A8:71FF:FF00::1
+ sntp address 2404:1A8:1102::A
+ sntp address 2404:1A8:1102::B
+ vendor-specific 210
+  suboption 201 hex <HGW_WAN_MAC(6)>
+  suboption 202 hex <PHONE_NUMBER(10)>
+  suboption 204 hex <SIP_DOMAIN(16)>
+  !086E74742D65617374026E65026A7000
+  suboption 210 hex <HGW_FW_UPDATE_SRV(31)>
+  !0377777707766572696E666F036867770A666C6574732D65617374026A7000
+!
+vtp mode transparent
+!
+vlan 2-9 
+!
+bridge irb
+!
+interface FastEthernet0
+ description IPv6(LAN)
+ no ip address
+ duplex auto
+ speed auto
+ ipv6 address FE80::1812:0 link-local
+ ipv6 address autoconfig
+ ipv6 enable
+ ipv6 ospf 1 area 0
+ no cdp enable
+!
+interface FastEthernet1
+ description Gr1_PPPoE+IPv4+ARP(ONU)
+ no ip address
+ duplex auto
+ speed auto
+ no cdp enable
+ bridge-group 1
+ bridge-group 1 input-type-list 211
+ bridge-group 1 output-type-list 211
+!
+interface FastEthernet2
+ switchport access vlan 2
+ no ip address
+ spanning-tree portfast
+!
+interface FastEthernet3
+ switchport access vlan 3
+ no ip address
+ spanning-tree portfast
+!
+interface FastEthernet4
+ switchport access vlan 4
+ no ip address
+ spanning-tree portfast
+!
+interface FastEthernet5
+ switchport access vlan 5
+ no ip address
+ spanning-tree portfast
+!
+interface FastEthernet6
+ switchport access vlan 6
+ no ip address
+ spanning-tree portfast
+!
+interface FastEthernet7
+ switchport access vlan 7
+ no ip address
+ spanning-tree portfast
+!
+interface FastEthernet8
+ switchport access vlan 8
+ no ip address
+ spanning-tree portfast
+!
+interface FastEthernet9
+ switchport access vlan 9
+ no ip address
+ spanning-tree portfast
+!
+interface Vlan2
+ description Gr1_PPPoE+IPv4+ARP(HGW_WAN)
+ no ip address
+ bridge-group 1
+ bridge-group 1 input-type-list 212
+ bridge-group 1 output-type-list 212
+!
+interface Vlan3
+ description Gr1_PPPoE
+ no ip address
+ bridge-group 1
+ bridge-group 1 input-type-list 213
+ bridge-group 1 output-type-list 213
+!
+interface Vlan4
+ description Gr1_PPPoE
+ no ip address
+ bridge-group 1
+ bridge-group 1 input-type-list 214
+ bridge-group 1 output-type-list 214
+!
+interface Vlan5
+ description Gr1_PPPoE
+ no ip address
+ bridge-group 1
+ bridge-group 1 input-type-list 215
+ bridge-group 1 output-type-list 215
+!
+interface Vlan6
+ description Gr2_IPv4+ARP(HGW_LAN)
+ no ip address
+ bridge-group 2
+ bridge-group 2 input-type-list 226
+ bridge-group 2 output-type-list 226
+!
+interface Vlan7
+ description Gr2_IPv4
+ no ip address
+ bridge-group 2
+ bridge-group 2 input-type-list 227
+ bridge-group 2 output-type-list 227
+!
+interface Vlan8
+ description Gr2_IPv4
+ no ip address
+ bridge-group 2
+ bridge-group 2 input-type-list 228
+ bridge-group 2 output-type-list 228
+!
+interface Vlan9
+ description Gr2_IPv4
+ no ip address
+ bridge-group 2
+ bridge-group 2 input-type-list 229
+ bridge-group 2 output-type-list 229
+!
+interface BVI1
+ no ip address
+ ipv6 address FE80::1812:2 link-local
+ ipv6 enable
+ ipv6 nd managed-config-flag
+ ipv6 nd other-config-flag
+ ipv6 dhcp server STATEFUL_BVI1
+!
+interface BVI2
+ no ip address
+!
+ip forward-protocol nd
+no ip http server
+no ip http secure-server
+!
+!
+!
+!FastEthernet1(ONU)-IPv4+ARP(Vlan2), PPPoE(Vlan2,3,4,5)
+access-list 211 permit 0x0800 0x0000
+access-list 211 permit 0x0806 0x0000
+access-list 211 permit 0x8863 0x0000
+access-list 211 permit 0x8864 0x0000
+access-list 211 deny   0x86DD 0x0000
+!
+!Vlan2(HGW_WAN)-IPv6(Fa0), IPv4+ARP(Fa1), PPPoE(Fa1,Vlan3,4,5)
+access-list 212 permit 0x0800 0x0000
+access-list 212 permit 0x0806 0x0000
+access-list 212 permit 0x8863 0x0000
+access-list 212 permit 0x8864 0x0000
+access-list 212 permit 0x86DD 0x0000
+!
+!Vlan3(RT_WAN)-PPPoE(Fa1,Vlan2,4,5)
+access-list 213 deny   0x0800 0x0000
+access-list 213 deny   0x0806 0x0000
+access-list 213 permit 0x8863 0x0000
+access-list 213 permit 0x8864 0x0000
+access-list 213 deny   0x86DD 0x0000
+!
+!Vlan4(RT_WAN)-PPPoE(Fa1,Vlan2,3,5)
+access-list 214 deny   0x0800 0x0000
+access-list 214 deny   0x0806 0x0000
+access-list 214 permit 0x8863 0x0000
+access-list 214 permit 0x8864 0x0000
+access-list 214 deny   0x86DD 0x0000
+!
+!Vlan5(RT_WAN)-PPPoE(Fa1,Vlan2,3,4)
+access-list 215 deny   0x0800 0x0000
+access-list 215 deny   0x0806 0x0000
+access-list 215 permit 0x8863 0x0000
+access-list 215 permit 0x8864 0x0000
+access-list 215 deny   0x86DD 0x0000
+!
+!Vlan6(HGW_LAN)-IPv4+ARP(Vlan7,8,9)
+access-list 226 permit 0x0800 0x0000
+access-list 226 permit 0x0806 0x0000
+access-list 226 deny   0x8863 0x0000
+access-list 226 deny   0x8864 0x0000
+access-list 226 deny   0x86DD 0x0000
+!
+!Vlan7(VoIP-ATA)-IPv4+ARP(Vlan6,8,9)
+access-list 227 permit 0x0800 0x0000
+access-list 227 permit 0x0806 0x0000
+access-list 227 deny   0x8863 0x0000
+access-list 227 deny   0x8864 0x0000
+access-list 227 deny   0x86DD 0x0000
+!
+!Vlan8(VoIP-ATA)-IPv4+ARP(Vlan6,7,9)
+access-list 228 permit 0x0800 0x0000
+access-list 228 permit 0x0806 0x0000
+access-list 228 deny   0x8863 0x0000
+access-list 228 deny   0x8864 0x0000
+access-list 228 deny   0x86DD 0x0000
+!
+!Vlan9(VoIP-ATA)-IPv4+ARP(Vlan6,7,8)
+access-list 229 permit 0x0800 0x0000
+access-list 229 permit 0x0806 0x0000
+access-list 229 deny   0x8863 0x0000
+access-list 229 deny   0x8864 0x0000
+access-list 229 deny   0x86DD 0x0000
+!
+ipv6 route ::/0 FastEthernet0 <DefGW>
+ipv6 local pool HGW_PD <Prefix>/60 60
+!
+bridge 1 protocol ieee
+bridge 1 route ip
+bridge 2 protocol ieee
+bridge 2 route ip
+!
+ntp server 2404:1A8:1102::A
+ntp server 2404:1A8:1102::B
+!
+!
+!OSPFv3(optional)
+interface Loopback0
+ ip address <Router_ID> 255.255.255.255
+!
+ipv6 router ospf 1
+ router-id <Router_ID>
+ redistribute static
+!
