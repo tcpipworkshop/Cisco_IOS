@@ -1,0 +1,122 @@
+version 15.5
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname yourname
+!
+boot-start-marker
+boot-end-marker
+!
+!
+logging buffered 51200 warnings
+no logging console
+!
+no aaa new-model
+ethernet lmi ce
+!
+!
+!
+!
+!
+!
+ip dhcp excluded-address 10.10.10.1
+!
+ip dhcp pool ccp-pool
+ import all
+ network 10.10.10.0 255.255.255.128
+ default-router 10.10.10.1
+ lease 0 2
+!
+!
+!
+no ip domain lookup
+ip domain name yourdomain.com
+ip cef
+no ipv6 cef
+!
+!
+!
+!
+!
+redundancy
+!
+!
+!
+!
+no cdp run
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ no ip address
+ spanning-tree portfast
+!
+interface GigabitEthernet0/1
+ no ip address
+ spanning-tree portfast
+!
+interface GigabitEthernet0/2
+ no ip address
+ spanning-tree portfast
+!
+interface GigabitEthernet0/3
+ no ip address
+ spanning-tree portfast
+!
+interface GigabitEthernet0/4
+ no ip address
+ shutdown
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/5
+ no ip address
+ shutdown
+ duplex auto
+ speed auto
+!
+interface Vlan1
+ description $ETH_LAN$
+ ip address 10.10.10.1 255.255.255.128
+ ip tcp adjust-mss 1452
+!
+ip forward-protocol nd
+ip http server
+ip http access-class 23
+ip http authentication local
+ip http secure-server
+ip http timeout-policy idle 60 life 86400 requests 10000
+!
+!
+!
+!
+!
+access-list 23 permit 10.10.10.0 0.0.0.127
+!
+!
+line con 0
+ login local
+ no modem enable
+line vty 0 4
+ access-class 23 in
+ privilege level 15
+ login local
+ transport input telnet ssh
+line vty 5 15
+ access-class 23 in
+ privilege level 15
+ login local
+ transport input telnet ssh
+!
+scheduler allocate 20000 1000
+!
+end
