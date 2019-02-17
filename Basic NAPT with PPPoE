@@ -1,0 +1,148 @@
+!
+!! This sample configuration file is provided for convenience of and with wishes of
+!! luck for those who are just starting to fiddle with their first Cisco ISR router.
+!! Most Cisco routers do not have any presets like default LAN address and configured
+!! DHCP, I imagine that many people (like I was once one of them) would find it rather
+!! difficult to get starter with. I struggled get myself online with the first ISR1812J.
+!! Well, being honest, it took me 3-5yrs to finally realize Cisco boxes and boxes of
+!! other competing brands were far richer in functionality that the best friends of
+!! mine at the time - YAMAHA RTX series - more appropriately seemed like options 
+!! "for professional-gear newbies". I'm not saying YAMAHAs are bad - they make excellent
+!! routers and the one I am most dependent on at home to this day is a RTX3000...but
+!! occasioonally there are situations where those boxes just do not meet my needs.
+!! Sometimes, maybe a Cisco box to satisfy that need, maybe it's a VyOS or EdgeMAX box 
+!! at other times. Different vendors have different philosophies to dectate the 
+!! characteristics of products - therefore, being familiar with as many different 
+!! platforms as possible is always a good option as doing so will leave you with more
+!! potential solutions.
+!! Anyway, enough talking - let's get to the config!
+!
+!WAN: PPPoE on FastEthernet0
+!LAN: IPv4 address 192.168.11.254/24 on Vlan1 
+!
+hostname CiscoISR
+!
+clock timezone JST 9 0
+!
+ip dhcp pool network_192_168_11_0
+ network 192.168.11.0 255.255.255.0
+ default-router 192.168.11.254
+ dns-server 1.1.1.1 1.0.0.1
+!
+ip dhcp excluded-address 192.168.11.17 192.168.11.254
+!
+ip cef
+ip domain retry 5
+ip domain timeout 1
+ip inspect name CBAC tcp
+ip inspect name CBAC udp
+ip inspect name CBAC ftp
+ip inspect name CBAC icmp
+ip inspect name CBAC pptp
+ip inspect name CBAC dns
+ipv6 unicast-routing
+ipv6 cef
+!
+vtp mode transparent
+username <USER> privilege 15 password 0 <PASSWORD>
+!
+!
+!PPPoE should be run in routed ports.
+interface FastEthernet0
+ description PPPoE
+ no ip address
+ duplex auto
+ speed auto
+ pppoe enable group global
+ pppoe-client dial-pool-number 1
+!
+interface Vlan1
+ ip address 192.168.11.254 255.255.255.0
+ ip nat inside
+ ip virtual-reassembly in
+ ip tcp adjust-mss 1414
+ duplex auto
+ speed auto
+!
+interface Dialer1
+ description "ISP"
+ ip address negotiated
+ ip access-group 101 in
+ ip access-group 100 out
+ ip mtu 1454
+ ip nat outside
+ ip inspect CBAC out
+ ip virtual-reassembly in
+ encapsulation ppp
+ dialer pool 1
+ dialer-group 1
+ ppp authentication chap callin
+ ppp chap hostname <PPPoE-USER>
+ ppp chap password 0 <PPPoE-PASSWORD>
+!
+!
+ip forward-protocol nd
+no ip http server
+no ip http secure-server
+!
+!
+ip dns view default
+ domain timeout 1
+ domain retry 5
+ip dns server
+ip nat inside source list 1 interface Dialer1 overload
+ip route 0.0.0.0 0.0.0.0 Dialer1 name DEFAULT_ROUTE
+!
+access-list 1 permit 10.0.0.0 0.255.255.255
+access-list 1 permit 172.16.0.0 0.15.255.255
+access-list 1 permit 192.168.0.0 0.0.255.255
+access-list 100 deny   ip any 10.0.0.0 0.255.255.255
+access-list 100 deny   ip any 172.16.0.0 0.15.255.255
+access-list 100 deny   ip any 192.168.0.0 0.0.255.255
+access-list 100 deny   ip any 169.254.0.0 0.0.255.255
+access-list 100 deny   ip any 100.64.0.0 0.63.255.255
+access-list 100 deny   ip any 192.0.0.0 0.0.0.255
+access-list 100 deny   ip any 198.18.0.0 0.1.255.255
+access-list 100 deny   ip any 192.0.2.0 0.0.0.255
+access-list 100 deny   ip any 198.51.100.0 0.0.0.255
+access-list 100 deny   ip any 203.0.113.0 0.0.0.255
+access-list 100 deny   tcp any any eq 135
+access-list 100 deny   udp any any eq 135
+access-list 100 deny   tcp any any range 137 139
+access-list 100 deny   udp any any range netbios-ns netbios-ss
+access-list 100 deny   tcp any any eq 445
+access-list 100 deny   udp any any eq 445
+access-list 100 permit ip any any
+access-list 101 deny   ip 10.0.0.0 0.255.255.255 any
+access-list 101 deny   ip 172.16.0.0 0.15.255.255 any
+access-list 101 deny   ip 192.168.0.0 0.0.255.255 any
+access-list 101 deny   ip 169.254.0.0 0.0.255.255 any
+access-list 101 deny   ip 100.64.0.0 0.63.255.255 any
+access-list 101 deny   ip 192.0.0.0 0.0.0.255 any
+access-list 101 deny   ip 198.18.0.0 0.1.255.255 any
+access-list 101 deny   ip 192.0.2.0 0.0.0.255 any
+access-list 101 deny   ip 198.51.100.0 0.0.0.255 any
+access-list 101 deny   ip 203.0.113.0 0.0.0.255 any
+access-list 101 deny   tcp any any eq 135
+access-list 101 deny   udp any any eq 135
+access-list 101 deny   tcp any any range 137 139
+access-list 101 deny   udp any any range netbios-ns netbios-ss
+access-list 101 deny   tcp any any eq 445
+access-list 101 deny   udp any any eq 445
+access-list 101 permit icmp any any
+!For PPTP
+!access-list 101 permit gre any any
+!For IPsec
+!access-list 101 permit esp any any
+!
+dialer-list 1 protocol ip permit
+!
+line con 0
+ login local
+line aux 0
+line vty 0 4
+ login local
+ transport input all
+!
+end
+!
